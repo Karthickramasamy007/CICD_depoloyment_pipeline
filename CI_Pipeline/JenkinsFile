@@ -1,47 +1,40 @@
 pipeline {
-    agent any
-    
-    parameters {
-        // This will create a dropdown in the Jenkins UI with the list of branches
-        choice(name: 'BRANCH', choices: ['main', 'develop', 'feature-branch'], description: 'Select the branch to build')
-    }
-    
-    stages {
-        stage('Checkout') {
-            steps {
-                script {
-                    // Checkout the branch selected by the user in the UI
-                    git url: 'https://github.com/your-repository.git', branch: "${params.BRANCH}"
-                }
-            }
-        }
 
-        stage('Build') {
-            steps {
-                script {
-                    // Here you can add the build steps (e.g., building Docker image, running tests, etc.)
-                    echo "Building branch ${params.BRANCH}..."
-                    // Example: sh 'python3 setup.py install' for Python apps
-                }
-            }
+  agent {
+    kubernetes { // Kubernetes plugin
+      cloud 'my-kind-kubernetes' // plugin cloud configuration name. Here is where jenkins controller and following containers are running.
+      yamlFile 'pipeline/builder.yaml'
+    }
+  }
+  
+
+  stages {
+
+    stage('Kaniko Build & Push Image') {
+      steps {
+        container('kaniko') { //name mentioned in the yaml file.
+          script {
+            sh '''
+            /kaniko/executor --dockerfile `pwd`/apps/app1/Dockerfile \
+                             --context `pwd` \
+                             --destination=mydockeraccfortest/myweb:${BUILD_NUMBER}
+            '''
+            //The above command build, tag and push to private registry. Regisntry credentinals are added as secret in k8's and mounted secret
+            //volume into the Kaniko container in yaml file.
+          }
         }
-        
-        stage('Deploy') {
-            steps {
-                script {
-                    // Deploy logic (e.g., deploying to Kubernetes, pushing to Artifact Registry, etc.)
-                    echo "Deploying branch ${params.BRANCH}..."
-                }
-            }
-        }
+      }
     }
     
-    post {
-        success {
-            echo "Pipeline finished successfully!"
+    stage('Deploy App to DEV Kubernetes Cluster') { // This deploys to the same cluster (DEV) where our jenkins pipeline is running.
+      steps {
+        container('kubectl') {  //Here we are not passing any k8's config files. Insted we use service account for rbac permissions to perform the below actions.
+            sh 'sed -i "s/<TAG>/${BUILD_NUMBER}/" ./apps/app1/myweb.yaml'
+            sh 'cat ./apps/app1/myweb.yaml'
+            sh 'kubectl apply -f ./apps/app1/myweb.yaml'
         }
-        failure {
-            echo "Pipeline failed."
-        }
+      }
     }
+    
+  }
 }

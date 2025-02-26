@@ -1,36 +1,34 @@
-#This is for
 apiVersion: v1
 kind: Pod
 metadata:
   name: kaniko
 spec:
-  serviceAccountName: jenkins # This allows to rbac permissions to perform operations on cluster.
+  serviceAccountName: jenkins # This allows RBAC permissions to perform operations on the cluster.
   containers:
   - name: kubectl
     image: joshendriks/alpine-k8s
     command:
     - /bin/cat
     tty: true    
+
   - name: kaniko
     image: gcr.io/kaniko-project/executor:v1.23.2-debug
     command:
     - /busybox/cat
     tty: true
     env:
-      - name: GOOGLE_CREDENTIALS
-        valueFrom:
-          secretKeyRef:
-            name: allow-gcp-resource-create-and-manage
-            key: credentials.json  # Name of the key in the secret
       - name: GOOGLE_APPLICATION_CREDENTIALS
-        value: /dev/null  # Silences any prompts asking for the credentials file
-  #   volumeMounts:
-  #     - name: kaniko-secret # Takes the docker login details from k8's secret path mounthed as volume.
-  #       mountPath: /kaniko/.docker
-  # volumes:
-  #   - name: kaniko-secret #This volume path is pointing K8's secrets path where we have created k8's secret for docker credentianls to be used by Kanino during run time.
-  #     secret:
-  #       secretName: regcred
-  #       items:
-  #         - key: .dockerconfigjson
-  #           path: config.json
+        value: /secret/credentials.json  # Correct path for GCP service account
+
+    volumeMounts:
+      - name: gcp-service-account
+        mountPath: /secret
+        readOnly: true  # Ensures security by making it read-only
+
+  volumes:
+    - name: gcp-service-account
+      secret:
+        secretName: allow-gcp-resource-create-and-manage  # This should be the secret containing the service account JSON
+        items:
+          - key: credentials.json
+            path: credentials.json  # Mount it as /secret/credentials.json

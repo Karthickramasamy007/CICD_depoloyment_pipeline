@@ -27,7 +27,7 @@ pipeline {
             sh 'echo "hai karthick"'
             sh 'pwd'
             sh """
-              /kaniko/executor --dockerfile `pwd`/app1/Dockerfile \
+              /kaniko/executor --dockerfile `pwd`/CI_Pipeline/app1/Dockerfile \
                                --context `pwd` \
                                --destination ${IMAGE_PATH} \
             """

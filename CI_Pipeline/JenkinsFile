@@ -9,12 +9,12 @@ pipeline {
   
 
   environment {
-        GOOGLE_PROJECT_ID = 'dev-demo-proj-1-id'
         REGISTRY = "gcr.io"  // Google Container Registry (or use your Artifact Registry URL)
-        PROJECT_ID = "your-project-id"  // Your Google Cloud project ID
+        PROJECT_ID = "dev-demo-proj-1-id"  // Your Google Cloud project ID
         IMAGE_NAME = "myweb"  // The image name
         IMAGE_TAG = "${BUILD_NUMBER}"  // Using Jenkins build number as the tag
-        IMAGE_PATH = "${REGISTRY}/${PROJECT_ID}/${IMAGE_NAME}:${IMAGE_TAG}"  // Full image path
+        //IMAGE_PATH = "${REGISTRY}/${PROJECT_ID}/${IMAGE_NAME}:${IMAGE_TAG}"  // Full image path
+        IMAGE_PATH = "europe-west1-docker.pkg.dev/dev-demo-proj-1-id/my-artifact-repo/testimg:123"
     }
 
     stages {

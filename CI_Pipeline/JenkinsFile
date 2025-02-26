@@ -3,52 +3,57 @@ pipeline {
   agent {
     kubernetes { // Kubernetes plugin
       cloud 'my-kind-kubernetes' // plugin cloud configuration name. Here is where jenkins controller and following containers are running.
-      yamlFile 'pipeline/builder.yaml'
+      yamlFile 'ppipeline_agents/agents.yaml'
     }
   }
   
 
   environment {
         GOOGLE_PROJECT_ID = 'dev-demo-proj-1-id'
+        REGISTRY = "gcr.io"  // Google Container Registry (or use your Artifact Registry URL)
+        PROJECT_ID = "your-project-id"  // Your Google Cloud project ID
+        IMAGE_NAME = "myweb"  // The image name
+        IMAGE_TAG = "${BUILD_NUMBER}"  // Using Jenkins build number as the tag
+        IMAGE_PATH = "${REGISTRY}/${PROJECT_ID}/${IMAGE_NAME}:${IMAGE_TAG}"  // Full image path
     }
 
     stages {
-        stage('Checkout Code') {
-            steps {
-                git url: 'https://github.com/Karthickramasamy007/gcp-infra-via-terraform', branch: 'main'
-            }
-        }
 
-        stage('Check Terraform Version') {
-            steps {
-                container('terraform') { // This references container name in the K8s yaml above to run the below command in pod.
-                    sh 'terraform --version'
-                    sh 'terraform init'
-                    sh 'terraform plan' 
-                    sh 'terraform apply -auto-approve' 
-                }
-            }
+    stage('Kaniko Build & Push Image') {
+      steps {
+        container('kaniko') { // Name of the container as per your YAML file
+          script {
+            // Kaniko build command to build the Docker image and push to Artifact Registry
+            sh """
+              /kaniko/executor --dockerfile \$(pwd)/apps/app1/Dockerfile \
+                               --context \$(pwd) \
+                               --destination ${IMAGE_PATH} \
+                               --oci-layout-path=/workspace/output \
+                               --push
+            """
+            // The command builds, tags, and pushes the image to the Artifact Registry.
+            // Ensure the registry credentials are properly set up in Kubernetes secrets and mounted in Kaniko container
+          }
         }
-
-        stage('Clean Up') {
-            steps {
-                container('terraform')  {
-                    sh 'terraform workspace select default || terraform workspace new default'
-                    sh 'terraform destroy -auto-approve'
-                }
-            }
-        }
+      }
     }
 
-    post {
-        success {
-            echo 'Terraform deployment successful!'
+    stage('Deploy App to DEV Kubernetes Cluster') {
+      steps {
+        container('kubectl') {  // kubectl container in your pod
+          // Replace <TAG> with the Jenkins build number in the deployment YAML
+          sh 'sed -i "s/<TAG>/${BUILD_NUMBER}/" ./apps/app1/myweb.yaml'
+          sh 'cat ./apps/app1/myweb.yaml'  // To verify the changes before applying
+          sh 'kubectl apply -f ./apps/app1/myweb.yaml'  // Apply the updated deployment YAML
         }
-        failure {
-            echo 'Terraform deployment failed!'
-        }
-        always {
-            echo 'Cleaning up...'
-        }
+      }
     }
+
+  }
+
+  post {
+    always {
+      cleanWs()  // Clean up workspace after the pipeline finishes
+    }
+  }
 }

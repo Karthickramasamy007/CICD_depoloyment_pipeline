@@ -28,8 +28,7 @@ pipeline {
               /kaniko/executor --dockerfile \$(pwd)/apps/app1/Dockerfile \
                                --context \$(pwd) \
                                --destination ${IMAGE_PATH} \
-                               --oci-layout-path=/workspace/output \
-                               --push
+                               --oci-layout-path=/workspace/output
             """
             // The command builds, tags, and pushes the image to the Artifact Registry.
             // Ensure the registry credentials are properly set up in Kubernetes secrets and mounted in Kaniko container

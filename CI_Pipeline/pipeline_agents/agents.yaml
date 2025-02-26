@@ -16,6 +16,14 @@ spec:
     command:
     - /busybox/cat
     tty: true
+    env:
+      - name: GOOGLE_CREDENTIALS
+        valueFrom:
+          secretKeyRef:
+            name: allow-gcp-resource-create-and-manage
+            key: credentials.json  # Name of the key in the secret
+      - name: GOOGLE_APPLICATION_CREDENTIALS
+        value: /dev/null  # Silences any prompts asking for the credentials file
   #   volumeMounts:
   #     - name: kaniko-secret # Takes the docker login details from k8's secret path mounthed as volume.
   #       mountPath: /kaniko/.docker

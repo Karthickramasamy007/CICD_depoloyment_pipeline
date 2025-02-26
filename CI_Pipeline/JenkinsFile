@@ -28,7 +28,7 @@ pipeline {
             sh 'pwd'
             sh """
               /kaniko/executor --dockerfile `pwd`/CI_Pipeline/app1/Dockerfile \
-                               --context `pwd` /CI_Pipeline/app1 \
+                               --context `pwd` /CI_Pipeline/app1/ \
                                --destination ${IMAGE_PATH} \
             """
             // The command builds, tags, and pushes the image to the Artifact Registry.

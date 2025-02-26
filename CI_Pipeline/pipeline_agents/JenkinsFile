@@ -19,8 +19,10 @@ pipeline {
 
     stages {
 
-    stage('Kaniko Build & Push Image') {
+    stage('Kaniko Build & Push Imageee') {
       steps {
+        sh 'echo "hello232"'
+        sh 'pwd'
         container('kaniko') { // Name of the container as per your YAML file
           sh 'echo "hello"'
           sh 'pwd'

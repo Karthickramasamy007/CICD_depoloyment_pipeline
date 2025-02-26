@@ -25,7 +25,7 @@ pipeline {
           script {
             // Kaniko build command to build the Docker image and push to Artifact Registry
             sh """
-              /kaniko/executor --dockerfile `pwd`/app1/Dockerfile \
+              /kaniko/executor --dockerfile `pwd`/CI_Pipeline/pipeline_agents/app1/Dockerfile \
                                --context `pwd` \
                                --destination ${IMAGE_PATH} \
             """

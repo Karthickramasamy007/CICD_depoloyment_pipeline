@@ -1,47 +1,71 @@
 pipeline {
-    agent any
-    
-    parameters {
-        // This will create a dropdown in the Jenkins UI with the list of branches
-        choice(name: 'BRANCH', choices: ['main', 'develop', 'feature-branch'], description: 'Select the branch to build')
+    agent {
+        kubernetes {
+            yaml """
+            apiVersion: v1
+            kind: Pod
+            metadata:
+              labels:
+                app: jenkins-agent
+            spec:
+              containers:
+                - name: terraform
+                  image: hashicorp/terraform
+                  command: [ "sh", "-c", "echo 'Checking Terraform version...' && terraform version && sleep 3600" ]
+                  tty: true
+                  env:
+                    - name: GOOGLE_CREDENTIALS
+                      valueFrom:
+                        secretKeyRef:
+                          name: allow-gcp-resource-create-and-manage
+                          key: credentials.json  # Name of the key in the secret
+                    - name: GOOGLE_APPLICATION_CREDENTIALS
+                      value: /dev/null  # Silences any prompts asking for the credentials file
+            """
+        }
     }
-    
+
+    environment {
+        GOOGLE_PROJECT_ID = 'dev-demo-proj-1-id'
+    }
+
     stages {
-        stage('Checkout') {
+        stage('Checkout Code') {
             steps {
-                script {
-                    // Checkout the branch selected by the user in the UI
-                    git url: 'https://github.com/your-repository.git', branch: "${params.BRANCH}"
+                git url: 'https://github.com/Karthickramasamy007/gcp-infra-via-terraform', branch: 'main'
+            }
+        }
+
+        stage('Check Terraform Version') {
+            steps {
+                container('terraform') { // This references container name in the K8s yaml above to run the below command in pod.
+                    sh 'terraform --version'
+                    sh 'terraform init'
+                    sh 'terraform plan' 
+                    sh 'terraform apply -auto-approve' 
                 }
             }
         }
 
-        stage('Build') {
+        stage('Clean Up') {
             steps {
-                script {
-                    // Here you can add the build steps (e.g., building Docker image, running tests, etc.)
-                    echo "Building branch ${params.BRANCH}..."
-                    // Example: sh 'python3 setup.py install' for Python apps
-                }
-            }
-        }
-        
-        stage('Deploy') {
-            steps {
-                script {
-                    // Deploy logic (e.g., deploying to Kubernetes, pushing to Artifact Registry, etc.)
-                    echo "Deploying branch ${params.BRANCH}..."
+                container('terraform')  {
+                    sh 'terraform workspace select default || terraform workspace new default'
+                    sh 'terraform destroy -auto-approve'
                 }
             }
         }
     }
-    
+
     post {
         success {
-            echo "Pipeline finished successfully!"
+            echo 'Terraform deployment successful!'
         }
         failure {
-            echo "Pipeline failed."
+            echo 'Terraform deployment failed!'
+        }
+        always {
+            echo 'Cleaning up...'
         }
     }
 }

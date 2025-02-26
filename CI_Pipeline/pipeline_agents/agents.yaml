@@ -6,11 +6,11 @@ metadata:
 spec:
   serviceAccountName: jenkins # This allows to rbac permissions to perform operations on cluster.
   containers:
-  # - name: kubectl
-  #   image: joshendriks/alpine-k8s
-  #   command:
-  #   - /bin/cat
-  #   tty: true    
+  - name: kubectl
+    image: joshendriks/alpine-k8s
+    command:
+    - /bin/cat
+    tty: true    
   - name: kaniko
     image: gcr.io/kaniko-project/executor:v1.23.2-debug
     command:

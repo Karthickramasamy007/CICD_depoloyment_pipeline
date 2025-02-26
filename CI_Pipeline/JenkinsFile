@@ -19,13 +19,15 @@ pipeline {
 
     stages {
 
-    stage('Kaniko Build & Push Image') {
+    stage('Kaniko Build & Push Imageqq') {
       steps {
         container('kaniko') { // Name of the container as per your YAML file
           script {
             // Kaniko build command to build the Docker image and push to Artifact Registry
+            sh 'echo "hai karthick'
+            sh 'pwd'
             sh """
-              /kaniko/executor --dockerfile `pwd`/app1/Dockerfile \
+              /kaniko/executor --dockerfile `pwd`/Dockerfile \
                                --context `pwd` \
                                --destination ${IMAGE_PATH} \
             """

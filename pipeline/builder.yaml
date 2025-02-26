@@ -1,28 +1,22 @@
-#This is for
 apiVersion: v1
 kind: Pod
 metadata:
-  name: kaniko
+  labels:
+    app: jenkins-agent
 spec:
-  serviceAccountName: jenkins # This allows to rbac permissions to perform operations on cluster.
   containers:
-  - name: kubectl
-    image: joshendriks/alpine-k8s
-    command:
-    - /bin/cat
-    tty: true    
-  - name: kaniko
-    image: gcr.io/kaniko-project/executor:debug
-    command:
-    - /busybox/cat
-    tty: true
-    volumeMounts:
-      - name: kaniko-secret # Takes the docker login details from k8's secret path mounthed as volume.
-        mountPath: /kaniko/.docker
+    - name: terraform
+      image: hashicorp/terraform
+      command: ["sh", "-c", "echo 'Checking Terraform version...' && terraform version && sleep 3600"]
+      tty: true
+      env:
+        - name: GOOGLE_APPLICATION_CREDENTIALS
+          value: /etc/gcp/credentials.json  # Path to where credentials are mounted
+      volumeMounts:
+        - name: gcp-credentials
+          mountPath: /etc/gcp
+          readOnly: true
   volumes:
-    - name: kaniko-secret #This volume path is pointing K8's secrets path where we have created k8's secret for docker credentianls to be used by Kanino during run time.
+    - name: gcp-credentials
       secret:
-        secretName: regcred
-        items:
-          - key: .dockerconfigjson
-            path: config.json
+        secretName: allow-gcp-resource-create-and-manage  # Secret name

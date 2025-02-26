@@ -3,7 +3,7 @@ pipeline {
   agent {
     kubernetes { // Kubernetes plugin
       cloud 'my-kind-kubernetes' // plugin cloud configuration name. Here is where jenkins controller and following containers are running.
-      yamlFile 'pipeline_agents/agents.yaml'
+      yamlFile 'CI_Pipeline/pipeline_agents/agents.yaml'
     }
   }
   

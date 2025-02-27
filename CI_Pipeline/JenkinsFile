@@ -39,9 +39,9 @@ pipeline {
     }
 
     stage('Update Image Tag in GitOps Repo') {
-  steps {
-    container('kubectl') {
-      script {
+      steps {
+        container('kubectl') { // Using any container with Git installed
+          script {
         withCredentials([string(credentialsId: 'git_ops_repo_credentinals', variable: 'GIT_PAT')]) {
           sh """
             echo "Cloning GitOps repository..."
@@ -61,9 +61,10 @@ pipeline {
           """
         }
       }
+        }
+      }
     }
   }
-}
 
   post {
     always {

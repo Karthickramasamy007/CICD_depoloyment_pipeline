@@ -21,7 +21,6 @@ pipeline {
         GIT_OPS_BRANCH = "main" // Change if needed
         GIT_OPS_YAML_FILE_PATH = "my-app.yaml.yaml"  // Path to the Kubernetes manifest file
   }
-    }
 
     stages {
 
@@ -62,4 +61,4 @@ pipeline {
       cleanWs()  // Clean up workspace after the pipeline finishes
     }
   }
-}}
+}

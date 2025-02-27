@@ -53,8 +53,8 @@ pipeline {
                 sed -i "s|image: .*|image: ${IMAGE_PATH}|" ${GIT_OPS_YAML_FILE_PATH}
 
                 echo "Committing changes..."
-                git config --global user.email "jenkins@pipeline.com"
-                git config --global user.name "Jenkins CI"
+                git config --global user.email "10cse61@gmail.com"
+                git config --global user.name "Karthickramasamy007"
                 git add ${GIT_OPS_YAML_FILE_PATH}
                 git commit -m "Update image tag to ${BUILD_NUMBER}"
                 git push origin ${GIT_OPS_BRANCH}

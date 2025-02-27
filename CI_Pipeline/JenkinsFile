@@ -49,7 +49,7 @@ pipeline {
         container('kubectl') {  // kubectl container in your pod
           // Replace <TAG> with the Jenkins build number in the deployment YAML
           sh 'sed -i "s/<TAG>/${BUILD_NUMBER}/" ./my-app.yaml.yaml'
-          sh 'cat ./my-app.yaml.yaml'  // To  verify the changes before applying
+          sh 'cat ./my-app.yaml.yaml'  // To verify the changes before applying
           //sh 'kubectl apply -f ./apps/app1/myweb.yaml'  // Apply the updated deployment YAML
         }
       }
@@ -62,4 +62,3 @@ pipeline {
       cleanWs()  // Clean up workspace after the pipeline finishes
     }
   }
-}

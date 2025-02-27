@@ -12,7 +12,7 @@ pipeline {
     PROJECT_ID = "dev-demo-proj-1-id"
     IMAGE_NAME = "myweb"
     IMAGE_TAG = "${BUILD_NUMBER}"
-    IMAGE_PATH = "europe-west1-docker.pkg.dev/dev-demo-proj-1-id/my-artifact-repo/testimg:123"
+    IMAGE_PATH = "europe-west1-docker.pkg.dev/dev-demo-proj-1-id/my-artifact-repo/testimg:${BUILD_NUMBER}"
 
     // GitOps repo details (where my-app.yaml exists)
     GIT_OPS_REPO = "https://github.com/Karthickramasamy007/Git_Ops_ArgoCD.git"

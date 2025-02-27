@@ -28,11 +28,11 @@ pipeline {
           script {
             sh 'echo "Building and pushing image..."'
             sh 'pwd'
-            sh """
-              /kaniko/executor --dockerfile `pwd`/CI_Pipeline/app1/Dockerfile \
-                               --context `pwd`/CI_Pipeline/app1 \
-                               --destination ${IMAGE_PATH}
-            """
+            // sh """
+            //   /kaniko/executor --dockerfile `pwd`/CI_Pipeline/app1/Dockerfile \
+            //                    --context `pwd`/CI_Pipeline/app1 \
+            //                    --destination ${IMAGE_PATH}
+            // """
           }
         }
       }

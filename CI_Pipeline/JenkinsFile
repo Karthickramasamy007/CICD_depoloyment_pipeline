@@ -15,6 +15,12 @@ pipeline {
         IMAGE_TAG = "${BUILD_NUMBER}"  // Using Jenkins build number as the tag
         //IMAGE_PATH = "${REGISTRY}/${PROJECT_ID}/${IMAGE_NAME}:${IMAGE_TAG}"  // Full image path
         IMAGE_PATH = "europe-west1-docker.pkg.dev/dev-demo-proj-1-id/my-artifact-repo/testimg:123"
+        
+        // Below is for gitops repo where this job will update image tag. ArgoCd will pickup and do CI job.
+        GIT_OPS_REPO = "https://github.com/Karthickramasamy007/Git_Ops_ArgoCD"
+        GIT_OPS_BRANCH = "main" // Change if needed
+        GIT_OPS_YAML_FILE_PATH = "my-app.yaml.yaml"  // Path to the Kubernetes manifest file
+  }
     }
 
     stages {
@@ -42,9 +48,9 @@ pipeline {
       steps {
         container('kubectl') {  // kubectl container in your pod
           // Replace <TAG> with the Jenkins build number in the deployment YAML
-          sh 'sed -i "s/<TAG>/${BUILD_NUMBER}/" ./apps/app1/myweb.yaml'
-          sh 'cat ./apps/app1/myweb.yaml'  // To verify the changes before applying
-          sh 'kubectl apply -f ./apps/app1/myweb.yaml'  // Apply the updated deployment YAML
+          sh 'sed -i "s/<TAG>/${BUILD_NUMBER}/" ./my-app.yaml.yaml'
+          sh 'cat ./my-app.yaml.yaml'  // To  verify the changes before applying
+          //sh 'kubectl apply -f ./apps/app1/myweb.yaml'  // Apply the updated deployment YAML
         }
       }
     }

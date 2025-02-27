@@ -42,25 +42,25 @@ pipeline {
       steps {
         container('kubectl') { // Using any container with Git installed
           script {
-        withCredentials([string(credentialsId: 'git_ops_repo_credentinals', variable: 'GIT_PAT')]) {
-          sh """
-            echo "Cloning GitOps repository..."
-            git clone https://\$GIT_PAT@github.com/Karthickramasamy007/Git_Ops_ArgoCD.git gitops_repo
-            cd gitops_repo
-            git checkout ${GIT_OPS_BRANCH}
+            withCredentials([usernamePassword(credentialsId: 'git_ops_repo_credentinals', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_TOKEN')]) {
+              sh """
+                echo "Cloning GitOps repository..."
+                git clone https://${GIT_USER}:${GIT_TOKEN}@github.com/Karthickramasamy007/Git_Ops_ArgoCD.git gitops_repo
+                cd gitops_repo
+                git checkout ${GIT_OPS_BRANCH}
 
-            echo "Updating image tag in ${GIT_OPS_YAML_FILE_PATH}..."
-            sed -i "s|image: .*|image: ${IMAGE_PATH}|" ${GIT_OPS_YAML_FILE_PATH}
+                echo "Updating image tag in ${GIT_OPS_YAML_FILE_PATH}..."
+                sed -i "s|image: .*|image: ${IMAGE_PATH}|" ${GIT_OPS_YAML_FILE_PATH}
 
-            echo "Committing changes..."
-            git config --global user.email "ci-bot@yourcompany.com"
-            git config --global user.name "CI/CD Pipeline Bot"
-            git add ${GIT_OPS_YAML_FILE_PATH}
-            git commit -m "Update image tag to ${BUILD_NUMBER}"
-            git push origin ${GIT_OPS_BRANCH}
-          """
-        }
-      }
+                echo "Committing changes..."
+                git config --global user.email "jenkins@pipeline.com"
+                git config --global user.name "Jenkins CI"
+                git add ${GIT_OPS_YAML_FILE_PATH}
+                git commit -m "Update image tag to ${BUILD_NUMBER}"
+                git push origin ${GIT_OPS_BRANCH}
+              """
+            }
+          }
         }
       }
     }

@@ -1,64 +1,74 @@
 pipeline {
 
   agent {
-    kubernetes { // Kubernetes pluginn
-      cloud 'my-kind-kubernetes' // plugin cloud configuration name. Here is where jenkins controller and following containers are running.
+    kubernetes {
+      cloud 'my-kind-kubernetes'
       yamlFile 'CI_Pipeline/pipeline_agents/agents.yaml'
     }
   }
-  
 
   environment {
-        REGISTRY = "gcr.io"  // Google Container Registry (or use your Artifact Registry URL)
-        PROJECT_ID = "dev-demo-proj-1-id"  // Your Google Cloud project ID
-        IMAGE_NAME = "myweb"  // The image name
-        IMAGE_TAG = "${BUILD_NUMBER}"  // Using Jenkins build number as the tag
-        //IMAGE_PATH = "${REGISTRY}/${PROJECT_ID}/${IMAGE_NAME}:${IMAGE_TAG}"  // Full image path
-        IMAGE_PATH = "europe-west1-docker.pkg.dev/dev-demo-proj-1-id/my-artifact-repo/testimg:123"
-        
-        // Below is for gitops repo where this job will update image tag. ArgoCd will pickup and do CI job.
-        GIT_OPS_REPO = "https://github.com/Karthickramasamy007/Git_Ops_ArgoCD"
-        GIT_OPS_BRANCH = "main" // Change if needed
-        GIT_OPS_YAML_FILE_PATH = "my-app.yaml"  // Path to the Kubernetes manifest file
+    REGISTRY = "gcr.io"
+    PROJECT_ID = "dev-demo-proj-1-id"
+    IMAGE_NAME = "myweb"
+    IMAGE_TAG = "${BUILD_NUMBER}"
+    IMAGE_PATH = "europe-west1-docker.pkg.dev/dev-demo-proj-1-id/my-artifact-repo/testimg:123"
+
+    // GitOps repo details (where my-app.yaml exists)
+    GIT_OPS_REPO = "https://github.com/Karthickramasamy007/Git_Ops_ArgoCD.git"
+    GIT_OPS_BRANCH = "main"
+    GIT_OPS_YAML_FILE_PATH = "my-app.yaml"  // Path inside the GitOps repo
   }
 
-    stages {
+  stages {
 
-    stage('Kaniko Build & Push Imageqq') {
+    stage('Kaniko Build & Push Image') {
       steps {
-        container('kaniko') { // Name of the container as per your YAML file
+        container('kaniko') {
           script {
-            // Kaniko build command to build the Docker image and push to Artifact Registry
-            sh 'echo "hai karthick"'
+            sh 'echo "Building and pushing image..."'
             sh 'pwd'
             sh """
               /kaniko/executor --dockerfile `pwd`/CI_Pipeline/app1/Dockerfile \
                                --context `pwd`/CI_Pipeline/app1 \
-                               --destination ${IMAGE_PATH} \
+                               --destination ${IMAGE_PATH}
             """
-            // The command builds, tags, and pushes the image to the Artifact Registry.
-            // Ensure the registry credentials are properly set up in Kubernetes secrets and mounted in Kaniko container
           }
         }
       }
     }
 
-    stage('Deploy App to DEV Kubernetes Cluster') {
+    stage('Update Image Tag in GitOps Repo') {
       steps {
-        container('kaniko') {  // kubectl container in your pod
-          // Replace <TAG> with the Jenkins build number in the deployment YAML
-          sh 'sed -i "s/<TAG>/${BUILD_NUMBER}/" ./my-app.yaml'
-          sh 'cat ./my-app.yaml'  // To verify the changes before applying
-          //sh 'kubectl apply -f ./apps/app1/myweb.yaml'  // Apply the updated deployment YAML
+        container('kubectl') { // Using any container with Git installed
+          script {
+            withCredentials([usernamePassword(credentialsId: 'git_ops_repo_credentinals', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_TOKEN')]) {
+              sh """
+                echo "Cloning GitOps repository..."
+                git clone https://${GIT_USER}:${GIT_TOKEN}@github.com/Karthickramasamy007/Git_Ops_ArgoCD.git gitops_repo
+                cd gitops_repo
+                git checkout ${GIT_OPS_BRANCH}
+
+                echo "Updating image tag in ${GIT_OPS_YAML_FILE_PATH}..."
+                sed -i "s|image: .*|image: ${IMAGE_PATH}|" ${GIT_OPS_YAML_FILE_PATH}
+
+                echo "Committing changes..."
+                git config --global user.email "jenkins@pipeline.com"
+                git config --global user.name "Jenkins CI"
+                git add ${GIT_OPS_YAML_FILE_PATH}
+                git commit -m "Update image tag to ${BUILD_NUMBER}"
+                git push origin ${GIT_OPS_BRANCH}
+              """
+            }
+          }
         }
       }
     }
-
   }
 
   post {
     always {
-      cleanWs()  // Clean up workspace after the pipeline finishes
+      cleanWs()
     }
   }
 }
